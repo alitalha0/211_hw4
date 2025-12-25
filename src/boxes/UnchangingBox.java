@@ -1,8 +1,8 @@
 package boxes;
 
 import enums.*;
-import tools.SpecialTool;
 import java.util.Map;
+import tools.SpecialTool;
 
 public class UnchangingBox extends Box {
 
@@ -11,9 +11,9 @@ public class UnchangingBox extends Box {
     }
 
     @Override
-    public boolean roll(RollDirectionType dir) {
-        // So this logic is likely same as RegularBox.
-        return true; 
+        public boolean roll(RollDirectionType dir) {
+        this.rotateSurfaces(dir); // Rotate the letters like a dice
+        return true;
     }
 
     @Override
