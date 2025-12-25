@@ -1,8 +1,8 @@
 package boxes;
 
 import enums.*;
-import tools.SpecialTool;
 import java.util.Map;
+import tools.SpecialTool;
 
 public class RegularBox extends Box {
 
@@ -10,12 +10,12 @@ public class RegularBox extends Box {
         super(values, position, specialTool);
     }
 
-    @Override
+   @Override
     public boolean roll(RollDirectionType dir) {
-        // Logic to update surface values based on direction (e.g., UP, DOWN)
-        // You need to implement the "Dice Logic" here to swap surface values.
-        // For example: if UP, Front becomes Top, Top becomes Rear, etc.
-        return true; // Regular boxes always allow the roll to pass through
+         
+        // but rotates its surfaces "like a dice"
+        this.rotateSurfaces(dir);
+        return true;
     }
 
     @Override
