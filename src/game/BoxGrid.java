@@ -4,6 +4,7 @@ import boxes.*;
 import tools.*;
 import enums.*;
 import exceptions.UnmovableFixedBoxException;
+import exceptions.BoxAlreadyFixedException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,9 +23,12 @@ import java.util.Random;
  */
 public class BoxGrid {
     private List<List<Box>> grid;
-    private static final int ROWS = 8; // we have 8x8 square grid       
+    private static final int ROWS = 8;     
     private static final int COLS = 8;
     private Random random;
+    
+    // The target letter for the current game (e.g., "D")
+    private SurfaceValue targetLetter; 
 
     public BoxGrid() {
         this.grid = new ArrayList<List<Box>>();
@@ -32,11 +36,14 @@ public class BoxGrid {
         initializeGrid();
     }
 
+    // Set the target letter at the start of the game
+    public void setTargetLetter(SurfaceValue targetLetter) {
+        this.targetLetter = targetLetter;
+    }
+
     private void initializeGrid() {
-        // Create the 8 rows
         for (int r = 0; r < ROWS; r++) {
             List<Box> rowList = new ArrayList<Box>();
-            // Create the 8 columns for each row
             for (int c = 0; c < COLS; c++) {
                 // Position is 1-based (R1-R8, C1-C8)
                 Position pos = new Position(r + 1, c + 1);
@@ -51,19 +58,17 @@ public class BoxGrid {
         int chance = random.nextInt(100) + 1; // 1 to 100
         Map<SurfaceType, SurfaceValue> surfaces = generateRandomSurfaces();
 
-        // 5% Chance -> FixedBox (1-5)
+        [cite_start]// 5% Chance -> FixedBox [cite: 55]
         if (chance <= 5) {
             return new FixedBox(surfaces, pos);
         } 
-        // 10% Chance -> UnchangingBox (6-15)
+        [cite_start]// 10% Chance -> UnchangingBox [cite: 49]
         else if (chance <= 15) {
-            // UnchangingBox is guaranteed to contain a tool (20% chance for each tool type)
             SpecialTool tool = generateRandomTool(true); 
             return new UnchangingBox(surfaces, pos, tool);
         } 
-        // 85% Chance -> RegularBox (16-100)
+        [cite_start]// 85% Chance -> RegularBox [cite: 46]
         else {
-            // RegularBox has 75% chance of containing a tool
             SpecialTool tool = generateRandomTool(false); 
             return new RegularBox(surfaces, pos, tool);
         }
@@ -73,7 +78,6 @@ public class BoxGrid {
         Map<SurfaceType, SurfaceValue> surfaces = new HashMap<SurfaceType, SurfaceValue>();
         Map<SurfaceValue, Integer> counts = new HashMap<SurfaceValue, Integer>();
         
-        // Initialize counts to 0
         for (SurfaceValue sv : SurfaceValue.values()) {
             counts.put(sv, 0);
         }
@@ -83,11 +87,10 @@ public class BoxGrid {
         for (SurfaceType type : SurfaceType.values()) {
             boolean valid = false;
             while (!valid) {
-                // Pick a random letter A-H
                 int randomIndex = random.nextInt(allValues.length);
                 SurfaceValue candidate = allValues[randomIndex];
 
-                // Check constraint: Cannot appear more than twice
+                [cite_start]// Check constraint: Cannot appear more than twice [cite: 14]
                 if (counts.get(candidate) < 2) {
                     surfaces.put(type, candidate);
                     counts.put(candidate, counts.get(candidate) + 1);
@@ -98,31 +101,23 @@ public class BoxGrid {
         return surfaces;
     }
 
-    /**
-     * Generates a random tool based on box type probabilities.
-     * @param isUnchangingBox true if generating for UnchangingBox (100% chance), false for RegularBox (75% chance).
-     */
     private SpecialTool generateRandomTool(boolean isUnchangingBox) {
         int roll = random.nextInt(100);
 
-        // If RegularBox, 25% chance to be empty (0-24 -> null)
-        // If UnchangingBox, 0% chance to be empty
+        [cite_start]// RegularBoxes have 25% chance of being empty [cite: 72]
         if (!isUnchangingBox && roll < 25) {
             return null;
         }
 
-        // Determine which tool (Equal probability among the 5 tools)
-        // For RegularBox: remaining 75% distributed equally (15% each)
-        // For UnchangingBox: 100% distributed equally (20% each)
+        // Generate tool with equal probability
         int toolType = random.nextInt(5);
-        
         switch (toolType) {
             case 0: return new BoxFlipper();
             case 1: return new BoxFixer();
             case 2: return new MassRowStamp();
             case 3: return new MassColumnStamp();
             case 4: return new PlusShapeStamp();
-            default: return null; // Should not happen
+            default: return null;
         }
     }
 
@@ -130,85 +125,119 @@ public class BoxGrid {
         if (row < 1 || row > ROWS || col < 1 || col > COLS) {
             return null;
         }
-        // Convert 1-based index to 0-based
         return grid.get(row - 1).get(col - 1);
     }
 
     /**
-     * Handles the first stage of the turn: Rolling boxes.
-     * @param row 1-based row index
-     * @param col 1-based col index
-     * @param dir Direction to roll
-     * @throws UnmovableFixedBoxException if the selected edge box is Fixed
+     * [cite_start]Handles the first stage: Rolling boxes[cite: 26].
      */
     public void selectEdgeBoxAndRoll(int row, int col, RollDirectionType dir) throws UnmovableFixedBoxException {
         Box startBox = getBox(row, col);
 
         if (startBox == null || !startBox.getPosition().isEdge()) {
-            // In a real app, you might throw an InvalidMoveException or handle this in the menu
             System.out.println("Error: Selected box is not an edge box.");
             return;
         }
 
-        // "If an edge box is also a FixedBox... UnmovableFixedBoxException is thrown"
+        [cite_start]// If edge box is Fixed, throw exception [cite: 53]
         if (startBox instanceof FixedBox) {
             throw new UnmovableFixedBoxException();
         }
 
-        // Get the line of boxes affected by the roll
         List<Box> line = getLineOfBoxes(row, col, dir);
 
-        // Apply domino effect
         for (Box b : line) {
-            // roll() returns true if the box rotates, false if it is FixedBox
             boolean moved = b.roll(dir);
-            
-            // "It stops the domino-effect from being transmitted past it"
+            [cite_start]// Stop if FixedBox blocks the path [cite: 52]
             if (!moved) {
                 break; 
             }
         }
     }
 
+    /**
+     * Uses the acquired tool on the specified box/position.
+     * [cite_start]This method satisfies the Generics requirement (T extends SpecialTool)[cite: 77].
+     */
+    public <T extends SpecialTool> void useTool(T tool, Position pos) 
+            throws UnmovableFixedBoxException, BoxAlreadyFixedException {
+        
+        int r = pos.getRow();
+        int c = pos.getCol();
+        Box targetBox = getBox(r, c);
+
+        [cite_start]// --- EXCEPTION CHECKS [cite: 88, 89] ---
+        if (targetBox instanceof FixedBox) {
+            if (tool instanceof BoxFlipper) {
+                throw new UnmovableFixedBoxException();
+            }
+            if (tool instanceof BoxFixer) {
+                throw new BoxAlreadyFixedException();
+            }
+        }
+
+        // --- TOOL LOGIC ---
+        
+        [cite_start]// 1. BoxFlipper: Flips the box upside down [cite: 66]
+        if (tool instanceof BoxFlipper) {
+            targetBox.flip();
+        } 
+        
+        [cite_start]// 2. BoxFixer: Replaces a box with an identical FixedBox copy [cite: 68]
+        else if (tool instanceof BoxFixer) {
+            FixedBox fixedCopy = new FixedBox(targetBox.getValues(), targetBox.getPosition());
+            // Replace in the grid (using 0-based index)
+            grid.get(r - 1).set(c - 1, fixedCopy);
+        } 
+        
+        [cite_start]// 3. MassRowStamp: Stamps entire row to target letter [cite: 62]
+        else if (tool instanceof MassRowStamp) {
+            for (int colIndex = 1; colIndex <= COLS; colIndex++) {
+                getBox(r, colIndex).setSurfaceValue(SurfaceType.TOP, targetLetter);
+            }
+        }
+        
+        [cite_start]// 4. MassColumnStamp: Stamps entire column to target letter [cite: 64]
+        else if (tool instanceof MassColumnStamp) {
+            for (int rowIndex = 1; rowIndex <= ROWS; rowIndex++) {
+                getBox(rowIndex, c).setSurfaceValue(SurfaceType.TOP, targetLetter);
+            }
+        }
+        
+        [cite_start]// 5. PlusShapeStamp: Stamps center and 4 neighbors [cite: 60]
+        else if (tool instanceof PlusShapeStamp) {
+            // Center
+            targetBox.setSurfaceValue(SurfaceType.TOP, targetLetter);
+            
+            // Neighbors (Check bounds before stamping)
+            if (r > 1) getBox(r - 1, c).setSurfaceValue(SurfaceType.TOP, targetLetter); // UP
+            if (r < ROWS) getBox(r + 1, c).setSurfaceValue(SurfaceType.TOP, targetLetter); // DOWN
+            if (c > 1) getBox(r, c - 1).setSurfaceValue(SurfaceType.TOP, targetLetter); // LEFT
+            if (c < COLS) getBox(r, c + 1).setSurfaceValue(SurfaceType.TOP, targetLetter); // RIGHT
+        }
+    }
+
     private List<Box> getLineOfBoxes(int startRow, int startCol, RollDirectionType dir) {
         List<Box> line = new ArrayList<Box>();
-
-        // Logic to collect boxes in the path of the roll
         switch (dir) {
             case RIGHT:
-                // From startCol to end of row (moving right)
-                for (int c = startCol; c <= COLS; c++) {
-                    line.add(getBox(startRow, c));
-                }
+                for (int c = startCol; c <= COLS; c++) line.add(getBox(startRow, c));
                 break;
             case LEFT:
-                // From startCol to beginning of row (moving left)
-                for (int c = startCol; c >= 1; c--) {
-                    line.add(getBox(startRow, c));
-                }
+                for (int c = startCol; c >= 1; c--) line.add(getBox(startRow, c));
                 break;
             case DOWN:
-                // From startRow to bottom of column (moving down)
-                for (int r = startRow; r <= ROWS; r++) {
-                    line.add(getBox(r, startCol));
-                }
+                for (int r = startRow; r <= ROWS; r++) line.add(getBox(r, startCol));
                 break;
             case UP:
-                // From startRow to top of column (moving up)
-                for (int r = startRow; r >= 1; r--) {
-                    line.add(getBox(r, startCol));
-                }
+                for (int r = startRow; r >= 1; r--) line.add(getBox(r, startCol));
                 break;
         }
         return line;
     }
 
-    /**
-     * Generates the string representation of the grid for the console display.
-     */
     @Override
     public String toString() {
-        // Standard String concatenation or StringBuilder can be used
         StringBuilder sb = new StringBuilder();
         
         // Header
@@ -219,23 +248,12 @@ public class BoxGrid {
         sb.append("\n");
 
         for (int r = 0; r < ROWS; r++) {
-            // Row Label
             sb.append("R").append(r + 1).append("    ");
-            
-            // Row Content
             for (int c = 0; c < COLS; c++) {
                 Box b = grid.get(r).get(c);
-                
-                // Construct the box status string: | Type-TopChar-Status |
-                String type = b.getShortType(); // R, U, or X
+                String type = b.getShortType(); 
                 String topChar = b.getValues().get(SurfaceType.TOP).stringValue();
-                String status = "M"; // Mystery (default)
-
-                // If opened or Fixed, show 'O' (Empty/Open)
-                // FixedBox is initialized as opened=true, so it will show O.
-                if (b.isOpened()) {
-                    status = "O";
-                }
+                String status = b.isOpened() ? "O" : "M";
 
                 sb.append("| ").append(type).append("-").append(topChar).append("-").append(status).append(" | ");
             }
