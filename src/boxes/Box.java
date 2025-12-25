@@ -41,6 +41,7 @@ public abstract class Box {
     public ToolType open() {
         this.opened = true;
         ToolType toReturn =  this.specialTool;
-        return this.specialTool;
+        this.specialTool = null;
+        return toReturn;
     }
 }
