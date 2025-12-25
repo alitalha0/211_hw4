@@ -1,0 +1,5 @@
+package enums;
+
+public enum ToolType {
+    PSHAPESTAMP, MASSROWSTAMP, MASSCOLSTAMP, BOXFLIPPER, BOXFIXER;
+}
