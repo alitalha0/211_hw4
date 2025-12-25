@@ -58,16 +58,16 @@ public class BoxGrid {
         int chance = random.nextInt(100) + 1; // 1 to 100
         Map<SurfaceType, SurfaceValue> surfaces = generateRandomSurfaces();
 
-        [cite_start]// 5% Chance -> FixedBox [cite: 55]
+        // 5% Chance -> FixedBox
         if (chance <= 5) {
             return new FixedBox(surfaces, pos);
         } 
-        [cite_start]// 10% Chance -> UnchangingBox [cite: 49]
+        // 10% Chance -> UnchangingBox
         else if (chance <= 15) {
             SpecialTool tool = generateRandomTool(true); 
             return new UnchangingBox(surfaces, pos, tool);
         } 
-        [cite_start]// 85% Chance -> RegularBox [cite: 46]
+        // 85% Chance -> RegularBox
         else {
             SpecialTool tool = generateRandomTool(false); 
             return new RegularBox(surfaces, pos, tool);
@@ -90,7 +90,7 @@ public class BoxGrid {
                 int randomIndex = random.nextInt(allValues.length);
                 SurfaceValue candidate = allValues[randomIndex];
 
-                [cite_start]// Check constraint: Cannot appear more than twice [cite: 14]
+                // Check constraint: Cannot appear more than twice
                 if (counts.get(candidate) < 2) {
                     surfaces.put(type, candidate);
                     counts.put(candidate, counts.get(candidate) + 1);
@@ -104,7 +104,7 @@ public class BoxGrid {
     private SpecialTool generateRandomTool(boolean isUnchangingBox) {
         int roll = random.nextInt(100);
 
-        [cite_start]// RegularBoxes have 25% chance of being empty [cite: 72]
+        // RegularBoxes have 25% chance of being empty
         if (!isUnchangingBox && roll < 25) {
             return null;
         }
@@ -129,7 +129,7 @@ public class BoxGrid {
     }
 
     /**
-     * [cite_start]Handles the first stage: Rolling boxes[cite: 26].
+     * Handles the first stage: Rolling boxes.
      */
     public void selectEdgeBoxAndRoll(int row, int col, RollDirectionType dir) throws UnmovableFixedBoxException {
         Box startBox = getBox(row, col);
@@ -139,7 +139,7 @@ public class BoxGrid {
             return;
         }
 
-        [cite_start]// If edge box is Fixed, throw exception [cite: 53]
+        // If edge box is Fixed, throw exception
         if (startBox instanceof FixedBox) {
             throw new UnmovableFixedBoxException();
         }
@@ -148,7 +148,7 @@ public class BoxGrid {
 
         for (Box b : line) {
             boolean moved = b.roll(dir);
-            [cite_start]// Stop if FixedBox blocks the path [cite: 52]
+            // Stop if FixedBox blocks the path
             if (!moved) {
                 break; 
             }
@@ -157,7 +157,7 @@ public class BoxGrid {
 
     /**
      * Uses the acquired tool on the specified box/position.
-     * [cite_start]This method satisfies the Generics requirement (T extends SpecialTool)[cite: 77].
+     * This method satisfies the Generics requirement (T extends SpecialTool).
      */
     public <T extends SpecialTool> void useTool(T tool, Position pos) 
             throws UnmovableFixedBoxException, BoxAlreadyFixedException {
@@ -166,7 +166,7 @@ public class BoxGrid {
         int c = pos.getCol();
         Box targetBox = getBox(r, c);
 
-        [cite_start]// --- EXCEPTION CHECKS [cite: 88, 89] ---
+        // --- EXCEPTION CHECKS ---
         if (targetBox instanceof FixedBox) {
             if (tool instanceof BoxFlipper) {
                 throw new UnmovableFixedBoxException();
@@ -178,33 +178,33 @@ public class BoxGrid {
 
         // --- TOOL LOGIC ---
         
-        [cite_start]// 1. BoxFlipper: Flips the box upside down [cite: 66]
+        // 1. BoxFlipper: Flips the box upside down
         if (tool instanceof BoxFlipper) {
             targetBox.flip();
         } 
         
-        [cite_start]// 2. BoxFixer: Replaces a box with an identical FixedBox copy [cite: 68]
+        // 2. BoxFixer: Replaces a box with an identical FixedBox copy
         else if (tool instanceof BoxFixer) {
             FixedBox fixedCopy = new FixedBox(targetBox.getValues(), targetBox.getPosition());
             // Replace in the grid (using 0-based index)
             grid.get(r - 1).set(c - 1, fixedCopy);
         } 
         
-        [cite_start]// 3. MassRowStamp: Stamps entire row to target letter [cite: 62]
+        // 3. MassRowStamp: Stamps entire row to target letter
         else if (tool instanceof MassRowStamp) {
             for (int colIndex = 1; colIndex <= COLS; colIndex++) {
                 getBox(r, colIndex).setSurfaceValue(SurfaceType.TOP, targetLetter);
             }
         }
         
-        [cite_start]// 4. MassColumnStamp: Stamps entire column to target letter [cite: 64]
+        // 4. MassColumnStamp: Stamps entire column to target letter
         else if (tool instanceof MassColumnStamp) {
             for (int rowIndex = 1; rowIndex <= ROWS; rowIndex++) {
                 getBox(rowIndex, c).setSurfaceValue(SurfaceType.TOP, targetLetter);
             }
         }
         
-        [cite_start]// 5. PlusShapeStamp: Stamps center and 4 neighbors [cite: 60]
+        // 5. PlusShapeStamp: Stamps center and 4 neighbors
         else if (tool instanceof PlusShapeStamp) {
             // Center
             targetBox.setSurfaceValue(SurfaceType.TOP, targetLetter);
