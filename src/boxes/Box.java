@@ -99,4 +99,23 @@ public abstract class Box {
             }
         }
 
+        public void flip() {
+        // 1. Get current values
+        SurfaceValue top = values.get(SurfaceType.TOP);
+        SurfaceValue bottom = values.get(SurfaceType.BOTTOM);
+        SurfaceValue front = values.get(SurfaceType.FRONT);
+        SurfaceValue rear = values.get(SurfaceType.REAR);
+        
+        // 2. Swap Top and Bottom
+        values.put(SurfaceType.TOP, bottom);
+        values.put(SurfaceType.BOTTOM, top);
+
+        // 3. Swap Front and Rear
+        values.put(SurfaceType.FRONT, rear);
+        values.put(SurfaceType.REAR, front);
+        
+        // Left and Right technically stay on the "sides" during a vertical flip axis,
+        // effectively swapping orientation, but for this puzzle, we just swap the values provided.
+    }
+
 }

@@ -1,7 +1,6 @@
 package boxes;
 
 import enums.*;
-import tools.SpecialTool;
 import java.util.Map;
 
 public class FixedBox extends Box {
@@ -14,9 +13,14 @@ public class FixedBox extends Box {
 
     @Override
     public boolean roll(RollDirectionType dir) {
-        // "FixedBox: A box that cannot be rolled in any direction"[cite: 50].
-        // "It prevents any actions from being passed through it"[cite: 51].
-        return false; 
+        return false;
+    }
+
+    @Override
+    public void flip() {
+        // FixedBox cannot be moved or flipped.
+        // We do nothing here. The validation should happen in the Game/Grid class
+        // to throw UnmovableFixedBoxException before reaching this point.
     }
 
     @Override
